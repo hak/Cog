@@ -87,10 +87,10 @@ void UCogSubsystem::TryInitialize(UWorld& World)
     IniHandler.UserData = this;
     ImGui::AddSettingsHandler(&IniHandler);
     
-    SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 1"));
-    SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 2"));
-    SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 3"));
-    SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 4"));
+    //SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 1"));
+    //SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 2"));
+    //SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 3"));
+    //SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 4"));
     
      Settings = GetConfig<UCogWindowConfig_Settings>();
     
@@ -106,8 +106,8 @@ void UCogSubsystem::TryInitialize(UWorld& World)
     AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_SaveLayout4,      FSimpleDelegate::CreateLambda([this] () { SaveLayout(4); }));
     AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_ResetLayout,      FSimpleDelegate::CreateLambda([this] () { ResetLayout(); }));
     
-     LayoutsWindow = AddWindow<FCogWindow_Layouts>("Window.Layouts");
-     SettingsWindow = AddWindow<FCogWindow_Settings>("Window.Settings");
+     //LayoutsWindow = AddWindow<FCogWindow_Layouts>("Window.Layouts");
+     //SettingsWindow = AddWindow<FCogWindow_Settings>("Window.Settings");
 
     for (FCogWindow* Window : Windows)
     {
@@ -168,6 +168,9 @@ void UCogSubsystem::TryInitialize(UWorld& World)
             }
         }));
 
+
+    // Force Cog to start hidden — F1 to activate
+    Context.SetEnableInput(false);
 
     bIsInitialized = true;
 }
@@ -563,8 +566,32 @@ void UCogSubsystem::RenderMainMenu()
 
     if (ShowMainMenu)
     {
+        RenderWidgets();
+
         for (FMenu& Menu : MainMenu.SubMenus)
         {
+            // Skip menus where all windows have bShowMenu disabled
+            if (Menu.Window != nullptr && Menu.Window->bShowMenu == false)
+            {
+                continue;
+            }
+            // Skip parent menus that only contain hidden windows
+            bool bHasVisibleChild = false;
+            if (Menu.Window == nullptr)
+            {
+                for (const FMenu& Sub : Menu.SubMenus)
+                {
+                    if (Sub.Window == nullptr || Sub.Window->bShowMenu)
+                    {
+                        bHasVisibleChild = true;
+                        break;
+                    }
+                }
+                if (!bHasVisibleChild && Menu.SubMenus.Num() > 0)
+                {
+                    continue;
+                }
+            }
             RenderOptionMenu(Menu);
         }
 
@@ -574,13 +601,13 @@ void UCogSubsystem::RenderMainMenu()
             {
                 CloseAllWindows();
             }
-            
+
             ImGui::Separator();
 
-            RenderMenuItem(*LayoutsWindow, "Layouts");
-            RenderMenuItem(*SettingsWindow, "Settings");
+            if (LayoutsWindow) { RenderMenuItem(*LayoutsWindow, "Layouts"); }
+            if (SettingsWindow) { RenderMenuItem(*SettingsWindow, "Settings"); }
 
-            if (ImGui::BeginMenu("Spacing"))
+            if (SpaceWindows.Num() > 0 && ImGui::BeginMenu("Spacing"))
             {
                 for (FCogWindow* SpaceWindow : SpaceWindows)
                 {
@@ -595,8 +622,7 @@ void UCogSubsystem::RenderMainMenu()
 
             ImGui::EndMenu();
         }
-        
-        RenderWidgets();
+
         ImGui::EndMainMenuBar();
     }    
     
@@ -606,108 +632,16 @@ void UCogSubsystem::RenderMainMenu()
 //--------------------------------------------------------------------------------------------------------------------------
 void UCogSubsystem::RenderWidgets()
 {
-    int32 NumVisibleWidgets = 0;
     for (int i = 0; i < Widgets.Num(); ++i)
     {
         FCogWindow* Window = Widgets[i];
         if (Window->GetIsWidgetVisible())
         {
-            NumVisibleWidgets++;
-        }
-    }
-
-    if (NumVisibleWidgets == 0)
-    { return; }
-    
-    const bool AddLeftColumn = Settings->WidgetAlignment == ECogWidgetAlignment::Right
-                    || Settings->WidgetAlignment == ECogWidgetAlignment::Manual
-                    || Settings->WidgetAlignment == ECogWidgetAlignment::Center;
-
-    const bool AddRightColumn = Settings->WidgetAlignment == ECogWidgetAlignment::Center;
-
-    int32 NumColumns = NumVisibleWidgets;
-    if (AddLeftColumn)
-    {
-        NumColumns++;
-    }
-    
-    if (AddRightColumn)
-    {
-        NumColumns ++;
-    }
-    
-    ImGuiTableFlags Flags = ImGuiTableFlags_None;
-    if (Settings->ShowWidgetBorders)
-    {
-        Flags |= ImGuiTableFlags_BordersInnerV;
-        if (Settings->WidgetAlignment == ECogWidgetAlignment::Left)
-        {
-            Flags |= ImGuiTableFlags_BordersOuterV;
-        }
-    } 
-
-    if (Settings->WidgetAlignment == ECogWidgetAlignment::Manual)
-    {
-        Flags |= ImGuiTableFlags_Resizable;
-        if (Settings->ShowWidgetBorders == false)
-        {
-            Flags |= ImGuiTableFlags_NoBordersInBodyUntilResize;
-        }
-    }
-
-    //ImGui::PushStyleVarX(ImGuiStyleVar_CellPadding, 0.0f);
-    
-    if (ImGui::BeginTable("Widgets", NumColumns, Flags))
-    {
-        if (AddLeftColumn)
-        {
-            ImGui::TableSetupColumn("Stretch", ImGuiTableColumnFlags_WidthStretch);
-        }
-        
-        for (int i = 0; i < NumVisibleWidgets; ++i)
-        {
-            ImGui::TableSetupColumn("Fixed", ImGuiTableColumnFlags_WidthFixed);
-        }
-
-        if (AddRightColumn)
-        {
-            ImGui::TableSetupColumn("Stretch", ImGuiTableColumnFlags_WidthStretch);
-        }
-        
-        ImGui::TableNextRow();
-
-        if (AddLeftColumn)
-        {
-            ImGui::TableNextColumn();
-        }
-
-        //---------------------------------------------------------------------
-        // Widgets 
-        //---------------------------------------------------------------------
-        for (int column = 0; column < Widgets.Num(); ++column)
-        {
-            ImGui::PushID(column);
-            
-            FCogWindow* Window = Widgets[column];
-            if (Window->GetIsWidgetVisible())
-            {
-                ImGui::TableNextColumn();
-                ImGui::AlignTextToFramePadding();
-                ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
-                Window->RenderMainMenuWidget();
-            }
-
+            ImGui::PushID(i);
+            Window->RenderMainMenuWidget();
             ImGui::PopID();
         }
-
-        if (AddRightColumn)
-        {
-            ImGui::TableNextColumn();
-        }
-
-        ImGui::EndTable();
     }
-    //ImGui::PopStyleVar();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
