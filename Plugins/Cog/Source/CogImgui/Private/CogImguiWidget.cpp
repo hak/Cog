@@ -153,7 +153,13 @@ FReply SCogImguiWidget::HandleKeyEvent(const FKeyEvent& KeyEvent, bool Down) con
         return FReply::Unhandled();
     }
 
-    if (const UWorld* World = Context->GetGameViewport()->GetWorld())
+    const UGameViewportClient* GameViewport = Context->GetGameViewport();
+    if (GameViewport == nullptr)
+    {
+        return FReply::Unhandled();
+    }
+
+    if (const UWorld* World = GameViewport->GetWorld())
     {
         if (const UPlayerInput* PlayerInput = FCogImguiInputHelper::GetPlayerInput(*World))
         {

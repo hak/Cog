@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "Templates/SharedPointer.h"
 #include "UObject/StrongObjectPtr.h"
+#include "UObject/WeakObjectPtr.h"
 
 class FCogImguiContext;
 class IInputProcessor;
@@ -84,7 +85,7 @@ public:
 
 	void SetFont(FString Value);
 
-	TObjectPtr<const UGameViewportClient> GetGameViewport() const { return GameViewport; }
+	const UGameViewportClient* GetGameViewport() const { return GameViewport.Get(); }
 
 	TSharedPtr<const SCogImguiWidget> GetMainWidget() const { return MainWidget; }
 
@@ -154,7 +155,7 @@ private:
 
 	TWeakPtr<SWidget> PreviousMouseCaptor = nullptr;
 
-	TObjectPtr<UGameViewportClient> GameViewport = nullptr;
+	TWeakObjectPtr<UGameViewportClient> GameViewport = nullptr;
 
 	ImGuiContext* Context = nullptr;
 

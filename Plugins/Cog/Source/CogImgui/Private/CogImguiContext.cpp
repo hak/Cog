@@ -168,6 +168,16 @@ void FCogImguiContext::Shutdown()
 {
     FCogImGuiContextScope ImGuiContextScope(Context, PlotContext);
 
+    bEnableInput = false;
+    if (bIsThrottleDisabled)
+    {
+        if (FSlateApplication::IsInitialized())
+        {
+            FSlateThrottleManager::Get().DisableThrottle(false);
+        }
+        bIsThrottleDisabled = false;
+    }
+
     //------------------------------------------------------------------
     // NetImgui must be shutdown before imgui as it uses context hooks
     //------------------------------------------------------------------
@@ -196,10 +206,16 @@ void FCogImguiContext::Shutdown()
         }
     }
 
-    if (GameViewport != nullptr)
+    if (UGameViewportClient* ValidGameViewport = GameViewport.Get())
     {
-        GameViewport->RemoveViewportWidgetContent(MainWidget.ToSharedRef());
-        GameViewport->RemoveViewportWidgetContent(InputCatcherWidget.ToSharedRef());
+        if (MainWidget.IsValid())
+        {
+            ValidGameViewport->RemoveViewportWidgetContent(MainWidget.ToSharedRef());
+        }
+        if (InputCatcherWidget.IsValid())
+        {
+            ValidGameViewport->RemoveViewportWidgetContent(InputCatcherWidget.ToSharedRef());
+        }
     }
 
     //Make sure ImGuiContextScope does not contain dangling pointer as we will destroy the contexts.
@@ -219,6 +235,10 @@ void FCogImguiContext::Shutdown()
         ImGui::DestroyContext(Context);
         Context = nullptr;
     }
+
+    MainWidget.Reset();
+    InputCatcherWidget.Reset();
+    GameViewport.Reset();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
