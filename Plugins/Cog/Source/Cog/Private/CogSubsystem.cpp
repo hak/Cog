@@ -595,34 +595,6 @@ void UCogSubsystem::RenderMainMenu()
             RenderOptionMenu(Menu);
         }
 
-        if (ImGui::BeginMenu("Window"))
-        {
-            if (ImGui::MenuItem("Close All Windows"))
-            {
-                CloseAllWindows();
-            }
-
-            ImGui::Separator();
-
-            if (LayoutsWindow) { RenderMenuItem(*LayoutsWindow, "Layouts"); }
-            if (SettingsWindow) { RenderMenuItem(*SettingsWindow, "Settings"); }
-
-            if (SpaceWindows.Num() > 0 && ImGui::BeginMenu("Spacing"))
-            {
-                for (FCogWindow* SpaceWindow : SpaceWindows)
-                {
-                    bool bSpaceVisible = SpaceWindow->GetIsVisible();
-                    if (ImGui::MenuItem(COG_TCHAR_TO_CHAR(*SpaceWindow->GetName()), nullptr, &bSpaceVisible))
-                    {
-                        SpaceWindow->SetIsVisible(bSpaceVisible);
-                    }
-                }
-                ImGui::EndMenu();
-            }
-
-            ImGui::EndMenu();
-        }
-
         ImGui::EndMainMenuBar();
     }    
     
@@ -1074,4 +1046,31 @@ void UCogSubsystem::TryDisableCommandsConflictingWithShortcuts(UPlayerInput* Pla
     }
         
     FCogImguiInputHelper::DisableCommandsConflictingWithShortcuts(*PlayerInput);
+}
+
+//--------------------------------------------------------------------------------------------------------------------------
+void UCogSubsystem::RenderWindowMenuContent()
+{
+    if (ImGui::MenuItem("Close All Windows"))
+    {
+        CloseAllWindows();
+    }
+
+    ImGui::Separator();
+
+    if (LayoutsWindow) { RenderMenuItem(*LayoutsWindow, "Layouts"); }
+    if (SettingsWindow) { RenderMenuItem(*SettingsWindow, "Settings"); }
+
+    if (SpaceWindows.Num() > 0 && ImGui::BeginMenu("Spacing"))
+    {
+        for (FCogWindow* SpaceWindow : SpaceWindows)
+        {
+            bool bSpaceVisible = SpaceWindow->GetIsVisible();
+            if (ImGui::MenuItem(COG_TCHAR_TO_CHAR(*SpaceWindow->GetName()), nullptr, &bSpaceVisible))
+            {
+                SpaceWindow->SetIsVisible(bSpaceVisible);
+            }
+        }
+        ImGui::EndMenu();
+    }
 }

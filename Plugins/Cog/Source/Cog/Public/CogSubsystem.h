@@ -53,6 +53,9 @@ public:
 
     virtual void CloseAllWindows();
 
+    /** Render the standard Cog Window menu entries inside an already-open menu. */
+    virtual void RenderWindowMenuContent();
+
     virtual void ResetLayout();
 
     virtual void LoadLayout(int32 LayoutIndex);
