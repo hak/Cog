@@ -408,6 +408,7 @@ bool FCogWidgets::ComboboxEnum(const char* Label, const FEnumProperty* EnumPrope
     if (ComboboxEnum(Label, Enum, EnumValue, NewValue))
     {
         EnumProperty->GetUnderlyingProperty()->SetIntPropertyValue(PointerToValue, NewValue);
+        HasChanged = true;
     }
 
     return HasChanged;
